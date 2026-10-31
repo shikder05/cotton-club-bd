@@ -1,0 +1,1288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cotton Club BD</title>
+  <style>
+    :root {
+      --primary: #1565c0;
+      --primary-dark: #0d47a1;
+      --primary-light: #90caf9;
+      --bg: #f5f9fc;
+      --box: #ffffff;
+      --label: #e3f2fd;
+      --text: #1a1a1a;
+      --text-soft: #333333;
+      --text-muted: #555555;
+      --border: #90caf9;
+      --input-bg: #ffffff;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      color: var(--text);
+    }
+    #loadingOverlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+      display: none; justify-content: center; align-items: center;
+      z-index: 99999; backdrop-filter: blur(4px);
+    }
+    #loadingOverlay.show { display: flex; }
+    .loader {
+      width: 46px; height: 46px; border: 4px solid var(--primary-light);
+      border-top-color: var(--primary); border-radius: 50%;
+      animation: spin 0.65s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #loginScreen {
+      position: fixed; inset: 0;
+      background: var(--bg);
+      display: flex; justify-content: center; align-items: center; z-index: 9999;
+    }
+    .login-box {
+      background: var(--box);
+      padding: 36px 32px; border-radius: 16px;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.12);
+      width: 100%; max-width: 370px; text-align: center;
+      border: 1.5px solid var(--border);
+    }
+    .login-logo {
+      width: 58px; height: 58px; background: var(--primary);
+      border-radius: 14px; margin: 0 auto 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px; color: #fff; font-weight: 800;
+    }
+    .login-box h2 { font-size: 18px; margin-bottom: 2px; color: var(--text); font-weight: 700; }
+    .login-box .sub { font-size: 11px; color: var(--text-muted); margin-bottom: 20px; }
+    .login-input {
+      width: 100%; padding: 12px 14px; margin-bottom: 11px;
+      border: 1.5px solid var(--border); border-radius: 10px; font-size: 14px;
+      outline: none; background: var(--input-bg); color: var(--text);
+    }
+    .login-input:focus { border-color: var(--primary); }
+    .remember-row {
+      display: flex; align-items: center; gap: 8px; margin: 4px 0 14px;
+      font-size: 13px; color: var(--text-soft); cursor: pointer;
+    }
+    .remember-row input { width: 15px; height: 15px; accent-color: var(--primary); }
+    .login-btn {
+      width: 100%; padding: 13px; background: var(--primary);
+      color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: 700;
+      cursor: pointer;
+    }
+    .login-btn:hover { background: var(--primary-dark); }
+    .login-error { color: #c62828; font-size: 13px; margin-top: 11px; display: none; font-weight: 600; }
+    .switch-mode { margin-top: 16px; font-size: 13px; color: var(--text-muted); }
+    .switch-mode span { color: var(--primary); font-weight: 700; cursor: pointer; }
+    #signupBox { display: none; }
+
+    .header {
+      background: var(--box); text-align: center; padding: 9px 14px;
+      border-bottom: 2px solid var(--border); position: relative; flex-shrink: 0;
+    }
+    .header h2 { margin: 0; font-size: 16px; font-weight: 700; display: inline; color: var(--text); }
+    .header .ext { font-size: 11px; font-weight: 600; color: var(--primary); margin-left: 6px; }
+    .menu-btn {
+      position: absolute; left: 12px; top: 8px;
+      background: var(--label); border: 1.5px solid var(--border); border-radius: 6px;
+      font-size: 17px; cursor: pointer; padding: 2px 9px; color: var(--text);
+    }
+    .header-right {
+      position: absolute; right: 12px; top: 7px;
+      display: flex; align-items: center; gap: 7px;
+    }
+    .user-info { font-size: 12px; font-weight: 600; color: var(--text-soft); }
+    .logout-btn, .refresh-btn {
+      border: none; padding: 6px 12px; border-radius: 6px;
+      font-weight: 600; cursor: pointer; font-size: 12px;
+    }
+    .logout-btn { background: transparent; border: 1.5px solid var(--border); color: var(--text); }
+    .refresh-btn { background: var(--primary); color: #fff; }
+
+    .sidebar {
+      position: fixed; left: -270px; top: 0; width: 270px; height: 100%;
+      background: var(--primary-dark); transition: 0.3s; z-index: 1000;
+    }
+    .sidebar.open { left: 0; }
+    .sidebar-header {
+      padding: 15px 18px; font-size: 15px; color: #fff; font-weight: 600;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .close-btn { background: none; border: none; color: #fff; font-size: 22px; cursor: pointer; }
+    .menu-item {
+      padding: 13px 18px; color: #fff; border-bottom: 1px solid rgba(255,255,255,0.12);
+      cursor: pointer; font-size: 14px;
+    }
+    .menu-item:hover { background: rgba(0,0,0,0.2); }
+
+    .content-area { flex-grow: 1; padding: 10px 12px; overflow: hidden; width: 100%; }
+    .view-section { display: none; width: 100%; height: 100%; overflow: hidden; }
+    .view-section.active { display: flex; }
+    #entryView { flex-direction: row; gap: 10px; }
+    .left-panel { width: 42%; height: 100%; display: flex; flex-direction: column; overflow-y: auto; padding-right: 4px; }
+    .right-panel { width: 58%; height: 100%; display: flex; flex-direction: column; overflow-y: auto; padding-left: 10px; border-left: 1.5px solid var(--border); }
+    #reportView, #userView, #themeView { flex-direction: column; overflow-y: auto; }
+
+    .section-title {
+      font-weight: 700; margin-bottom: 7px; font-size: 13.5px;
+      border-bottom: 1.5px solid var(--border); padding-bottom: 4px; color: var(--text);
+    }
+    .box {
+      background: var(--box); border: 1.5px solid var(--border);
+      border-radius: 10px; padding: 11px; margin-bottom: 10px;
+    }
+    .row {
+      display: flex; margin-bottom: 6px; border: 1.5px solid var(--border);
+      border-radius: 7px; overflow: hidden;
+    }
+    .row label {
+      width: 36%; background: var(--label); padding: 8px 10px;
+      font-size: 12px; font-weight: 600; border-right: 1.5px solid var(--border);
+      display: flex; align-items: center; color: var(--text);
+    }
+    .row input, .row select {
+      width: 64%; border: none; padding: 8px 10px; font-size: 13px;
+      outline: none; background: var(--input-bg); color: var(--text);
+    }
+    .row input[readonly] { background: var(--input-bg); color: var(--text-muted); font-style: italic; }
+    .row select:disabled { background: var(--input-bg); color: var(--text-muted); cursor: not-allowed; }
+
+    .btn {
+      width: 100%; padding: 10px; font-size: 13px; font-weight: 600;
+      border: none; border-radius: 7px; cursor: pointer; color: #fff; margin-top: 5px;
+    }
+    .btn-green { background: #2e7d32; }
+    .btn-red { background: var(--primary); }
+    .btn-toggle { background: var(--label); color: var(--text); border: 1.5px solid var(--border); font-size: 12px; }
+    .btn-clear { background: #607d8b; }
+    .btn-delete { background: #c62828; margin-top: 6px; }
+
+    .summary-row {
+      display: flex; border: 1.5px solid var(--border); border-radius: 7px;
+      overflow: hidden; margin-bottom: 7px;
+    }
+    .summary-row div {
+      width: 55%; background: var(--label); padding: 8px;
+      font-weight: 600; font-size: 12px; color: var(--text);
+    }
+    .summary-row .val {
+      width: 45%; background: var(--box); text-align: center;
+      border-left: 1.5px solid var(--border); font-weight: 700; font-size: 13px; color: var(--text);
+    }
+
+    .live-summary {
+      background: var(--box); border: 1.5px solid var(--border);
+      border-radius: 10px; padding: 12px; margin-bottom: 10px;
+    }
+    .live-summary .title { font-size: 12px; font-weight: 700; color: var(--primary); margin-bottom: 6px; }
+    .live-summary .total { font-size: 20px; font-weight: 800; color: var(--text); margin: 4px 0 8px; }
+    .prog-item {
+      font-size: 12px; padding: 6px 0; border-bottom: 1px solid rgba(0,0,0,0.08);
+      color: var(--text-soft);
+    }
+    .prog-item:last-child { border-bottom: none; }
+    .prog-item .prog-name { font-weight: 700; color: var(--text); margin-bottom: 2px; }
+    .prog-item .prog-weights { font-size: 12px; }
+
+    table {
+      width: 100%; border-collapse: collapse; text-align: center;
+      border: 1.5px solid var(--border); margin-bottom: 8px; font-size: 11px;
+    }
+    th { background: var(--label); padding: 6px 2px; border: 1px solid var(--border); font-weight: 600; color: var(--text); }
+    td { padding: 5px 2px; border: 1px solid var(--border); font-weight: 600; background: var(--box); color: var(--text); }
+
+    #updateFormWrapper { display: none; }
+    .search-flex { display: flex; gap: 6px; margin-bottom: 7px; align-items: center; flex-wrap: wrap; }
+    .search-flex input, .search-flex select {
+      padding: 7px; border: 1.5px solid var(--border); border-radius: 6px;
+      font-size: 12px; background: var(--input-bg); color: var(--text);
+    }
+
+    .msg {
+      font-size: 12px; padding: 7px 10px; border-radius: 6px;
+      margin-top: 6px; display: none; font-weight: 600;
+    }
+    .msg-success { background: #e8f5e9; color: #2e7d32; }
+    .msg-error { background: #ffebee; color: #c62828; }
+
+    .theme-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(125px, 1fr)); gap: 10px; }
+    .theme-card {
+      border: 2px solid #ddd; border-radius: 10px; padding: 10px;
+      text-align: center; cursor: pointer; background: var(--box);
+    }
+    .theme-card.active { border-color: var(--primary); }
+    .theme-preview { height: 34px; border-radius: 6px; margin-bottom: 6px; }
+    .theme-card div:last-child { font-size: 12px; font-weight: 600; color: var(--text); }
+
+    .user-table td, .user-table th { padding: 7px 5px; font-size: 12px; }
+    .status-active { color: #2e7d32; font-weight: 700; }
+    .status-pending { color: #ef6c00; font-weight: 700; }
+    .status-inactive { color: #c62828; font-weight: 700; }
+    .admin-only-msg { text-align: center; padding: 40px; color: var(--primary); font-size: 15px; font-weight: 600; }
+
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: var(--label); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+  </style>
+</head>
+<body>
+
+  <div id="loadingOverlay"><div class="loader"></div></div>
+
+  <div id="loginScreen">
+    <div class="login-box" id="loginBox">
+      <div class="login-logo">CC</div>
+      <h2>COTTON CLUB BD LIMITED.</h2>
+      <div class="sub">(Extended Part)</div>
+      <input type="text" id="loginUser" class="login-input" placeholder="Username">
+      <input type="password" id="loginPass" class="login-input" placeholder="Password">
+      <label class="remember-row">
+        <input type="checkbox" id="rememberMe"> Remember Username & Password
+      </label>
+      <button class="login-btn" onclick="doLogin()">Login</button>
+      <div id="loginError" class="login-error"></div>
+      <div class="switch-mode">Don't have account? <span onclick="showSignup()">Sign Up</span></div>
+    </div>
+
+    <div class="login-box" id="signupBox">
+      <div class="login-logo">CC</div>
+      <h2>Create Account</h2>
+      <div class="sub">Admin approval required</div>
+      <input type="text" id="suUser" class="login-input" placeholder="Username">
+      <input type="password" id="suPass" class="login-input" placeholder="Password">
+      <input type="password" id="suPass2" class="login-input" placeholder="Confirm Password">
+      <button class="login-btn" onclick="doSignup()">Sign Up</button>
+      <div id="signupError" class="login-error"></div>
+      <div class="switch-mode">Already have account? <span onclick="showLogin()">Login</span></div>
+    </div>
+  </div>
+
+  <div id="mainApp" style="display:none; height:100%; flex-direction:column;">
+    <div id="sidebar" class="sidebar">
+      <div class="sidebar-header">Menu <button class="close-btn" onclick="toggleMenu()">×</button></div>
+      <div class="menu-item" onclick="switchTab('entryView')">📝 New Roll Entry</div>
+      <div class="menu-item" onclick="switchTab('reportView')">📊 Daily Report</div>
+      <div class="menu-item" onclick="switchTab('themeView')">🎨 Color Theme</div>
+      <div class="menu-item" onclick="switchTab('userView')">👥 User Management</div>
+    </div>
+
+    <div class="header">
+      <button class="menu-btn" onclick="toggleMenu()">☰</button>
+      <h2>COTTON CLUB BD LIMITED</h2><span class="ext">(EXTENDED PART)</span>
+      <div class="header-right">
+        <span class="user-info" id="currentUserDisplay"></span>
+        <button class="refresh-btn" onclick="forceRefresh()">Refresh</button>
+        <button class="logout-btn" onclick="doLogout()">Logout</button>
+      </div>
+    </div>
+
+    <div class="content-area">
+      <!-- Entry View -->
+      <div id="entryView" class="view-section active">
+        <div class="left-panel">
+          <div class="section-title">📝 New Roll Entry</div>
+          <div class="box">
+            <form onsubmit="event.preventDefault(); submitForm();">
+              <div class="row"><label>Date:</label><input type="date" id="date" onchange="loadMachineStats()" required></div>
+              <div class="row">
+                <label>Machine No:</label>
+                <select id="machineNo" onchange="loadMachineStats()" required></select>
+              </div>
+              <div class="row">
+                <label>Shift:</label>
+                <select id="shift" onchange="loadMachineStats()" required>
+                  <option value="">-- Select --</option>
+                  <option value="A">A</option>
+                  <option value="B">B</option>
+                  <option value="C">C</option>
+                </select>
+              </div>
+              <div class="row"><label>Program No:</label><input type="text" id="programNo" required></div>
+              <div class="row"><label>Roll No (Auto):</label><input type="text" id="rollNo" readonly placeholder="Auto"></div>
+              <div class="row"><label>Weight (Kg):</label><input type="number" step="0.01" id="weight" required></div>
+              <div class="row">
+                <label>Condition:</label>
+                <select id="condition" required>
+                  <option value="OK">OK</option>
+                  <option value="Hold up">Hold up</option>
+                  <option value="Reject">Reject</option>
+                </select>
+              </div>
+              <button type="submit" id="saveBtn" class="btn btn-green">Save Data</button>
+              <button type="button" class="btn btn-clear" onclick="clearForm()">Clear Form</button>
+              <div id="saveMsg" class="msg"></div>
+            </form>
+          </div>
+        </div>
+
+        <div class="right-panel">
+          <div class="summary-row">
+            <div>Today's Total Production:</div>
+            <div class="val" id="todayTotalAll">0.00 Kg</div>
+          </div>
+          <div class="summary-row">
+            <div>Entered By:</div>
+            <div class="val" id="liveEnteredBy">-</div>
+          </div>
+
+          <div class="live-summary">
+            <div class="title">Machine + Shift Total</div>
+            <div id="liveSummaryText" style="font-size:13px;color:var(--text-muted);">Select Machine & Shift</div>
+            <div class="total" id="liveSummaryTotal">0.00 Kg</div>
+            <div id="programBreakdown"></div>
+          </div>
+
+          <button class="btn btn-toggle" onclick="toggleUpdate()">⚙️ Update / Delete Roll</button>
+
+          <div id="updateFormWrapper" class="box">
+            <form onsubmit="event.preventDefault(); submitUpdate();">
+              <div class="row"><label>Date:</label><input type="date" id="upDate" onchange="fetchUpdateRolls()" required></div>
+              <div class="row">
+                <label>Machine No:</label>
+                <select id="upMachineNo" onchange="fetchUpdateRolls()" required></select>
+              </div>
+              <div class="row">
+                <label>Shift:</label>
+                <select id="upShift" onchange="fetchUpdateRolls()" required>
+                  <option value="">-- Select --</option>
+                  <option value="A">A</option>
+                  <option value="B">B</option>
+                  <option value="C">C</option>
+                </select>
+              </div>
+              <div class="row"><label>Program No:</label><input type="text" id="upProgramNo" placeholder="Update Program"></div>
+              <div class="row">
+                <label>Select Roll:</label>
+                <select id="upRollId" onchange="fillUpdateData()" required>
+                  <option value="">-- Select First --</option>
+                </select>
+              </div>
+              <div class="row"><label>New Wgt (Kg):</label><input type="number" step="0.01" id="upWeight" required></div>
+              <div class="row">
+                <label>Condition:</label>
+                <select id="upCondition" required>
+                  <option value="OK">OK</option>
+                  <option value="Hold up">Hold up</option>
+                  <option value="Reject">Reject</option>
+                </select>
+              </div>
+              <button type="submit" id="updateBtn" class="btn btn-red">Update Data</button>
+              <button type="button" id="deleteBtn" class="btn btn-delete" onclick="submitDelete()">🗑 Delete This Roll</button>
+              <div id="updateMsg" class="msg"></div>
+            </form>
+          </div>
+
+          <div class="section-title">🔍 Data Search</div>
+          <div class="box">
+            <div class="search-flex">
+              <input type="date" id="searchDate" style="width:120px;">
+              <select id="searchMachine" style="width:90px;"></select>
+              <select id="searchShift" style="width:70px;">
+                <option value="A">A</option>
+                <option value="B">B</option>
+                <option value="C">C</option>
+              </select>
+              <button class="btn btn-red" style="margin:0; width:80px; padding:7px;" onclick="performSearch()">Search</button>
+            </div>
+            <table style="margin-bottom:0; margin-top:6px;">
+              <tr>
+                <th>M/C</th><th>Prog.</th>
+                <th>R1</th><th>R2</th><th>R3</th><th>R4</th><th>R5</th>
+                <th>R6</th><th>R7</th><th>R8</th><th>R9</th><th>R10</th>
+                <th>Total</th>
+              </tr>
+              <tr id="searchResultData">
+                <td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td>
+                <td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td>
+              </tr>
+            </table>
+            <div style="margin-top:5px; font-size:11px; color:var(--text-muted);">
+              <b>Entered By:</b> <span id="searchEnteredBy">-</span> | <b>Shift:</b> <span id="searchShiftResult">-</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Report View -->
+      <div id="reportView" class="view-section">
+        <div class="section-title">📅 Daily Production Report</div>
+        <div class="box">
+          <div class="search-flex">
+            <input type="date" id="reportDate" style="width:140px;">
+            <select id="reportShift" style="width:90px;">
+              <option value="All">All</option>
+              <option value="A">A</option>
+              <option value="B">B</option>
+              <option value="C">C</option>
+            </select>
+            <button class="btn btn-red" style="margin:0; width:130px; padding:8px;" onclick="generateReport()">View Report</button>
+          </div>
+          <table style="margin-top:8px;">
+            <thead>
+              <tr>
+                <th>Machine</th><th>Shift</th><th>Program</th>
+                <th>R1</th><th>R2</th><th>R3</th><th>R4</th><th>R5</th>
+                <th>R6</th><th>R7</th><th>R8</th><th>R9</th><th>R10</th>
+                <th>Total</th><th>Entered By</th>
+              </tr>
+            </thead>
+            <tbody id="reportTableBody">
+              <tr><td colspan="15">No data available.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Theme View -->
+      <div id="themeView" class="view-section">
+        <div class="section-title">🎨 Choose Color Theme</div>
+        <div class="box"><div class="theme-grid" id="themeGrid"></div></div>
+      </div>
+
+      <!-- User View -->
+      <div id="userView" class="view-section">
+        <div class="section-title">👥 User Management</div>
+        <div id="adminContent" style="display:none;">
+          <div class="box">
+            <div class="row"><label>Username:</label><input type="text" id="umUsername"></div>
+            <div class="row"><label>Password:</label><input type="text" id="umPassword"></div>
+            <div class="row">
+              <label>Status:</label>
+              <select id="umStatus">
+                <option value="Active">Active</option>
+                <option value="Pending">Pending</option>
+                <option value="Inactive">Inactive</option>
+              </select>
+            </div>
+            <div class="row">
+              <label>Can View Others:</label>
+              <select id="umCanView"><option value="No">No</option><option value="Yes">Yes</option></select>
+            </div>
+            <div class="row">
+              <label>Permission:</label>
+              <select id="umPermission"><option value="ViewOnly">View Only</option><option value="CanEdit">Can Edit</option></select>
+            </div>
+            <div class="row">
+              <label>Assigned Shift:</label>
+              <select id="umShift">
+                <option value="A">A</option><option value="B">B</option>
+                <option value="C">C</option><option value="All">All</option>
+              </select>
+            </div>
+            <button class="btn btn-green" onclick="saveUserData()">Save User</button>
+            <div id="umMsg" class="msg"></div>
+          </div>
+          <div class="box">
+            <table class="user-table">
+              <thead>
+                <tr>
+                  <th>Username</th><th>Password</th><th>Status</th><th>View Others</th>
+                  <th>Permission</th><th>Shift</th><th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="userTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div id="nonAdminMsg" class="admin-only-msg" style="display:none;">🔒 Only Admin can access</div>
+      </div>
+    </div>
+  </div>
+
+<script>
+// ===================== DATA STORAGE (localStorage) =====================
+const MACHINES = [];
+for(let i=87; i<=112; i++) MACHINES.push(String(i));
+MACHINES.push("137","222","223");
+
+function getUsers() {
+  let users = JSON.parse(localStorage.getItem('ccbd_users') || '[]');
+  if(users.length === 0) {
+    users = [{
+      username: "admin",
+      password: "1234",
+      status: "Active",
+      canViewOthers: "Yes",
+      permission: "CanEdit",
+      assignedShift: "All"
+    }];
+    localStorage.setItem('ccbd_users', JSON.stringify(users));
+  }
+  return users;
+}
+function saveUsers(users) {
+  localStorage.setItem('ccbd_users', JSON.stringify(users));
+}
+function getProduction() {
+  return JSON.parse(localStorage.getItem('ccbd_production') || '[]');
+}
+function saveProduction(data) {
+  localStorage.setItem('ccbd_production', JSON.stringify(data));
+}
+
+// ===================== GLOBAL VARS =====================
+let currentUser = "", isAdmin = false, canViewOthers = false;
+let permission = "ViewOnly", assignedShift = "A";
+let isSaving = false;
+let currentUpdateRolls = [];
+
+// ===================== THEMES =====================
+const themes = [
+  { name: "Sky Blue", primary: "#1565c0", dark: "#0d47a1", light: "#90caf9", bg: "#f5f9fc", box: "#ffffff", label: "#e3f2fd", border: "#90caf9", input: "#ffffff" },
+  { name: "Ocean Blue", primary: "#0277bd", dark: "#01579b", light: "#4fc3f7", bg: "#f0f7fc", box: "#ffffff", label: "#e1f5fe", border: "#4fc3f7", input: "#ffffff" },
+  { name: "Soft Blue", primary: "#1e88e5", dark: "#1565c0", light: "#bbdefb", bg: "#f8fbff", box: "#ffffff", label: "#e3f2fd", border: "#bbdefb", input: "#ffffff" },
+  { name: "Indigo Clean", primary: "#3949ab", dark: "#1a237e", light: "#9fa8da", bg: "#f5f6fc", box: "#ffffff", label: "#e8eaf6", border: "#9fa8da", input: "#ffffff" },
+  { name: "Teal Pro", primary: "#00897b", dark: "#00695c", light: "#80cbc4", bg: "#f2fafa", box: "#ffffff", label: "#e0f2f1", border: "#80cbc4", input: "#ffffff" },
+  { name: "Gray Blue", primary: "#455a64", dark: "#263238", light: "#b0bec5", bg: "#f7f9fa", box: "#ffffff", label: "#eceff1", border: "#b0bec5", input: "#ffffff" },
+  { name: "Fresh Green", primary: "#2e7d32", dark: "#1b5e20", light: "#a5d6a7", bg: "#f5faf5", box: "#ffffff", label: "#e8f5e9", border: "#a5d6a7", input: "#ffffff" },
+  { name: "Warm Orange", primary: "#ef6c00", dark: "#e65100", light: "#ffcc80", bg: "#fff8f2", box: "#ffffff", label: "#fff3e0", border: "#ffcc80", input: "#ffffff" },
+  { name: "Soft Red", primary: "#c62828", dark: "#8e0000", light: "#ef9a9a", bg: "#faf6f6", box: "#ffffff", label: "#ffebee", border: "#ef9a9a", input: "#ffffff" },
+  { name: "Purple Soft", primary: "#6a1b9a", dark: "#4a148c", light: "#ce93d8", bg: "#faf5fc", box: "#ffffff", label: "#f3e5f5", border: "#ce93d8", input: "#ffffff" },
+  { name: "Dark Navy", primary: "#1565c0", dark: "#0d47a1", light: "#64b5f6", bg: "#0d1b2a", box: "#1b263b", label: "#415a77", border: "#1565c0", input: "#1b263b" },
+  { name: "Dark Teal", primary: "#00897b", dark: "#004d40", light: "#4db6ac", bg: "#0a1f1e", box: "#0f2f2d", label: "#145a55", border: "#00897b", input: "#0f2f2d" },
+  { name: "Dark Slate", primary: "#546e7a", dark: "#263238", light: "#90a4ae", bg: "#12181c", box: "#1c252b", label: "#2c3a42", border: "#546e7a", input: "#1c252b" },
+  { name: "Dark Indigo", primary: "#3949ab", dark: "#1a237e", light: "#7986cb", bg: "#0c1222", box: "#151b30", label: "#1e2745", border: "#3949ab", input: "#151b30" }
+];
+
+function applyTheme(i) {
+  const t = themes[i];
+  document.documentElement.style.setProperty('--primary', t.primary);
+  document.documentElement.style.setProperty('--primary-dark', t.dark);
+  document.documentElement.style.setProperty('--primary-light', t.light);
+  document.documentElement.style.setProperty('--bg', t.bg);
+  document.documentElement.style.setProperty('--box', t.box);
+  document.documentElement.style.setProperty('--label', t.label);
+  document.documentElement.style.setProperty('--border', t.border);
+  document.documentElement.style.setProperty('--input-bg', t.input);
+  const isLight = i < 10;
+  document.documentElement.style.setProperty('--text', isLight ? '#1a1a1a' : '#f0f0f0');
+  document.documentElement.style.setProperty('--text-soft', isLight ? '#333333' : '#e0e0e0');
+  document.documentElement.style.setProperty('--text-muted', isLight ? '#555555' : '#b0b0b0');
+  localStorage.setItem('ccbd_theme', i);
+  document.querySelectorAll('.theme-card').forEach((c, idx) => c.classList.toggle('active', idx === i));
+}
+
+function buildThemeGrid() {
+  const grid = document.getElementById('themeGrid');
+  grid.innerHTML = '';
+  const saved = parseInt(localStorage.getItem('ccbd_theme') || '0');
+  themes.forEach((t, i) => {
+    const card = document.createElement('div');
+    card.className = 'theme-card' + (i === saved ? ' active' : '');
+    card.onclick = () => applyTheme(i);
+    card.innerHTML = `<div class="theme-preview" style="background:linear-gradient(135deg,${t.primary},${t.dark})"></div><div>${t.name}</div>`;
+    grid.appendChild(card);
+  });
+  applyTheme(saved);
+}
+
+// ===================== MACHINE DROPDOWNS =====================
+function fillMachineSelects() {
+  const selects = ['machineNo', 'upMachineNo', 'searchMachine'];
+  selects.forEach(id => {
+    const el = document.getElementById(id);
+    if(!el) return;
+    el.innerHTML = '<option value="">-- Select --</option>';
+    MACHINES.forEach(m => {
+      el.innerHTML += `<option value="${m}">${m}</option>`;
+    });
+  });
+}
+
+// ===================== LOGIN / SIGNUP =====================
+function showSignup() {
+  document.getElementById('loginBox').style.display = 'none';
+  document.getElementById('signupBox').style.display = 'block';
+  document.getElementById('signupError').style.display = 'none';
+}
+function showLogin() {
+  document.getElementById('signupBox').style.display = 'none';
+  document.getElementById('loginBox').style.display = 'block';
+  document.getElementById('loginError').style.display = 'none';
+}
+
+function doLogin() {
+  const user = document.getElementById('loginUser').value.trim();
+  const pass = document.getElementById('loginPass').value.trim();
+  const err = document.getElementById('loginError');
+  if(!user || !pass) {
+    err.innerText = "Enter Username & Password";
+    err.style.display = 'block';
+    return;
+  }
+  const users = getUsers();
+  const found = users.find(u => u.username === user && u.password === pass);
+  if(!found) {
+    err.innerText = "Username or Password is incorrect";
+    err.style.display = 'block';
+    return;
+  }
+  if(found.status === "Inactive") {
+    err.innerText = "Account is disabled. Contact Admin.";
+    err.style.display = 'block';
+    return;
+  }
+  if(found.status === "Pending") {
+    err.innerText = "Account pending approval. Wait for Admin.";
+    err.style.display = 'block';
+    return;
+  }
+
+  currentUser = found.username;
+  isAdmin = found.username.toLowerCase() === "admin";
+  canViewOthers = found.canViewOthers === "Yes" || isAdmin;
+  permission = isAdmin ? "CanEdit" : found.permission;
+  assignedShift = isAdmin ? "All" : found.assignedShift;
+
+  if(document.getElementById('rememberMe').checked) {
+    localStorage.setItem('ccbd_user', user);
+    localStorage.setItem('ccbd_pass', pass);
+  } else {
+    localStorage.removeItem('ccbd_user');
+    localStorage.removeItem('ccbd_pass');
+  }
+
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('mainApp').style.display = 'flex';
+  document.getElementById('currentUserDisplay').innerText = "👤 " + currentUser;
+
+  const today = new Date().toISOString().split('T')[0];
+  ['date','upDate','searchDate','reportDate'].forEach(id => {
+    document.getElementById(id).value = today;
+  });
+
+  fillMachineSelects();
+  lockShiftDropdowns();
+  buildThemeGrid();
+  loadMachineStats();
+}
+
+function doSignup() {
+  const u = document.getElementById('suUser').value.trim();
+  const p = document.getElementById('suPass').value.trim();
+  const p2 = document.getElementById('suPass2').value.trim();
+  const err = document.getElementById('signupError');
+  if(!u || !p) {
+    err.innerText = "Username & Password required";
+    err.style.display = 'block';
+    return;
+  }
+  if(p !== p2) {
+    err.innerText = "Passwords do not match";
+    err.style.display = 'block';
+    return;
+  }
+  if(u.toLowerCase() === "admin") {
+    err.innerText = "Cannot register as admin";
+    err.style.display = 'block';
+    return;
+  }
+  const users = getUsers();
+  if(users.find(x => x.username.toLowerCase() === u.toLowerCase())) {
+    err.innerText = "Username already exists";
+    err.style.display = 'block';
+    return;
+  }
+  users.push({
+    username: u,
+    password: p,
+    status: "Pending",
+    canViewOthers: "No",
+    permission: "ViewOnly",
+    assignedShift: "A"
+  });
+  saveUsers(users);
+  err.style.color = "#2e7d32";
+  err.innerText = "Account created! Wait for Admin approval.";
+  err.style.display = 'block';
+  setTimeout(showLogin, 2500);
+}
+
+function lockShiftDropdowns() {
+  ['shift', 'upShift'].forEach(id => {
+    const el = document.getElementById(id);
+    if(assignedShift !== "All" && !isAdmin) {
+      el.value = assignedShift;
+      el.disabled = true;
+    } else {
+      el.disabled = false;
+    }
+  });
+}
+
+function doLogout() {
+  document.getElementById('mainApp').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+  showLogin();
+  currentUser = "";
+  isAdmin = false;
+}
+
+// ===================== UI HELPERS =====================
+function showLoading() { document.getElementById('loadingOverlay').classList.add('show'); }
+function hideLoading() { document.getElementById('loadingOverlay').classList.remove('show'); }
+function toggleMenu() { document.getElementById('sidebar').classList.toggle('open'); }
+function switchTab(id) {
+  ['entryView','reportView','themeView','userView'].forEach(t => {
+    document.getElementById(t).classList.remove('active');
+  });
+  document.getElementById(id).classList.add('active');
+  document.getElementById('sidebar').classList.remove('open');
+  if(id === 'userView') {
+    if(isAdmin) {
+      document.getElementById('adminContent').style.display = 'block';
+      document.getElementById('nonAdminMsg').style.display = 'none';
+      loadUsers();
+    } else {
+      document.getElementById('adminContent').style.display = 'none';
+      document.getElementById('nonAdminMsg').style.display = 'block';
+    }
+  }
+  if(id === 'themeView') buildThemeGrid();
+}
+function toggleUpdate() {
+  const w = document.getElementById('updateFormWrapper');
+  w.style.display = w.style.display === 'block' ? 'none' : 'block';
+}
+function clearForm() {
+  document.getElementById('programNo').value = '';
+  document.getElementById('weight').value = '';
+  document.getElementById('condition').value = 'OK';
+  document.getElementById('rollNo').value = '';
+  hideMsg('saveMsg');
+}
+function showMsg(id, text, isError) {
+  const el = document.getElementById(id);
+  el.innerText = text;
+  el.className = 'msg ' + (isError ? 'msg-error' : 'msg-success');
+  el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', 3000);
+}
+function hideMsg(id) { document.getElementById(id).style.display = 'none'; }
+function forceRefresh() {
+  document.getElementById('weight').value = '';
+  document.getElementById('condition').value = 'OK';
+  loadMachineStats();
+  fetchUpdateRolls();
+}
+
+// ===================== PRODUCTION LOGIC =====================
+function getKey(date, machine, shift) {
+  return `${date}_${machine}_${shift}`;
+}
+
+function loadMachineStats() {
+  const machine = document.getElementById('machineNo').value;
+  const date = document.getElementById('date').value;
+  const shift = document.getElementById('shift').value;
+  if(!machine || !date || !shift) return;
+
+  document.getElementById('rollNo').value = "Loading...";
+  showLoading();
+
+  setTimeout(() => {
+    const all = getProduction();
+    let todayTotal = 0;
+    let entry = null;
+
+    all.forEach(row => {
+      if(row.date === date) {
+        if(canViewOthers || isAdmin || row.enteredBy === currentUser) {
+          todayTotal += parseFloat(row.total) || 0;
+        }
+      }
+      if(row.date === date && row.machine === machine && row.shift === shift) {
+        if(canViewOthers || isAdmin || row.enteredBy === currentUser) {
+          entry = row;
+        }
+      }
+    });
+
+    todayTotal = Math.round(todayTotal * 100) / 100;
+    document.getElementById('todayTotalAll').innerText = todayTotal.toFixed(2) + " Kg";
+
+    if(entry) {
+      document.getElementById('rollNo').value = "R" + (entry.rolls.filter(r => r.val !== "" && r.val !== null).length + 1);
+      if(document.getElementById('rollNo').value === "R11") document.getElementById('rollNo').value = "Full";
+      document.getElementById('liveEnteredBy').innerText = entry.enteredBy || "-";
+      document.getElementById('programNo').value = entry.program || "";
+      updateLiveSummary(machine, shift, entry.total, entry.programBreakdown || []);
+    } else {
+      document.getElementById('rollNo').value = "R1";
+      document.getElementById('liveEnteredBy').innerText = "-";
+      document.getElementById('programNo').value = "";
+      updateLiveSummary(machine, shift, 0, []);
+    }
+    hideLoading();
+  }, 200);
+}
+
+function updateLiveSummary(machine, shift, total, breakdown) {
+  document.getElementById('liveSummaryText').innerText = `Machine ${machine}  |  Shift ${shift}`;
+  document.getElementById('liveSummaryTotal').innerText = Number(total || 0).toFixed(2) + " Kg";
+  let html = '';
+  if(breakdown && breakdown.length > 0) {
+    breakdown.forEach((p, index) => {
+      const label = (index + 1) + (index === 0 ? "st" : index === 1 ? "nd" : index === 2 ? "rd" : "th") + " Program";
+      html += `<div class="prog-item">
+                <div class="prog-name">${label} (${p.program})</div>
+                <div class="prog-weights">${p.weights.join(" + ")} = <b>${p.total} Kg</b></div>
+              </div>`;
+    });
+  }
+  document.getElementById('programBreakdown').innerHTML = html;
+}
+
+function submitForm() {
+  if(isSaving) return;
+  if(permission === "ViewOnly" && !isAdmin) {
+    showMsg('saveMsg', 'You only have View permission!', true);
+    return;
+  }
+  if(assignedShift !== "All" && !isAdmin && document.getElementById('shift').value !== assignedShift) {
+    showMsg('saveMsg', 'You can only enter data in your assigned shift: ' + assignedShift, true);
+    return;
+  }
+
+  const date = document.getElementById('date').value;
+  const machine = document.getElementById('machineNo').value;
+  const shift = document.getElementById('shift').value;
+  const programNo = document.getElementById('programNo').value.trim();
+  const weight = parseFloat(document.getElementById('weight').value) || 0;
+  const condition = document.getElementById('condition').value;
+
+  if(!machine || !shift || !weight) {
+    showMsg('saveMsg', 'Please fill Machine, Shift and Weight', true);
+    return;
+  }
+
+  isSaving = true;
+  document.getElementById('saveBtn').innerText = "Saving...";
+  document.getElementById('saveBtn').disabled = true;
+  showLoading();
+
+  setTimeout(() => {
+    let all = getProduction();
+    let entry = all.find(r => r.date === date && r.machine === machine && r.shift === shift);
+
+    if(!entry) {
+      entry = {
+        date, machine, shift,
+        program: "",
+        rolls: Array(10).fill(null).map(() => ({val:"", bg:"#ffffff", strike:"none", color:"#000000"})),
+        total: 0,
+        enteredBy: currentUser,
+        programBreakdown: []
+      };
+      all.push(entry);
+    }
+
+    // Add program
+    let progs = entry.program ? entry.program.split(" ... ").filter(Boolean) : [];
+    if(programNo && !progs.includes(programNo)) {
+      progs.push(programNo);
+    }
+    entry.program = progs.join(" ... ");
+
+    // Find empty roll
+    let emptyIdx = entry.rolls.findIndex(r => r.val === "" || r.val === null);
+    if(emptyIdx === -1) {
+      showMsg('saveMsg', 'All 10 rolls are full!', true);
+      isSaving = false;
+      document.getElementById('saveBtn').innerText = "Save Data";
+      document.getElementById('saveBtn').disabled = false;
+      hideLoading();
+      return;
+    }
+
+    const colors = ["#ffcdd2", "#bbdefb", "#c8e6c9", "#fff9c4", "#e1bee7", "#b2ebf2", "#ffccbc", "#d1c4e9"];
+    const progIndex = progs.indexOf(programNo);
+    const cellColor = colors[progIndex % colors.length];
+
+    entry.rolls[emptyIdx] = {
+      val: weight,
+      bg: cellColor,
+      strike: (condition === "Hold up" || condition === "Reject") ? "line-through" : "none",
+      color: condition === "Reject" ? "#d32f2f" : "#000000"
+    };
+
+    // Calculate total (skip Reject)
+    let total = 0;
+    entry.rolls.forEach(r => {
+      if(r.val !== "" && r.color !== "#d32f2f") {
+        total += parseFloat(r.val) || 0;
+      }
+    });
+    entry.total = Math.round(total * 100) / 100;
+    entry.enteredBy = currentUser;
+
+    // Rebuild breakdown
+    const colorMap = {};
+    progs.forEach((p, i) => colorMap[colors[i % colors.length]] = p);
+    const breakdown = {};
+    entry.rolls.forEach(r => {
+      if(r.val !== "") {
+        const progName = colorMap[r.bg] || "Unknown";
+        if(!breakdown[progName]) breakdown[progName] = {weights:[], total:0};
+        const w = parseFloat(r.val) || 0;
+        if(r.color !== "#d32f2f") {
+          breakdown[progName].weights.push(w);
+          breakdown[progName].total += w;
+        } else {
+          breakdown[progName].weights.push(w + " (R)");
+        }
+      }
+    });
+    entry.programBreakdown = Object.keys(breakdown).map(k => ({
+      program: k,
+      weights: breakdown[k].weights,
+      total: Math.round(breakdown[k].total * 100) / 100
+    }));
+
+    saveProduction(all);
+
+    document.getElementById('weight').value = '';
+    document.getElementById('condition').value = 'OK';
+    showMsg('saveMsg', 'Saved Successfully!', false);
+    loadMachineStats();
+
+    isSaving = false;
+    document.getElementById('saveBtn').innerText = "Save Data";
+    document.getElementById('saveBtn').disabled = false;
+    hideLoading();
+  }, 300);
+}
+
+// ===================== UPDATE / DELETE =====================
+function fetchUpdateRolls() {
+  const d = document.getElementById('upDate').value;
+  const m = document.getElementById('upMachineNo').value;
+  const s = document.getElementById('upShift').value;
+  const sel = document.getElementById('upRollId');
+  sel.innerHTML = '<option value="">-- Loading --</option>';
+  if(!m || !s) {
+    sel.innerHTML = '<option value="">-- Select --</option>';
+    return;
+  }
+  showLoading();
+  setTimeout(() => {
+    const all = getProduction();
+    const entry = all.find(r => r.date === d && r.machine === m && r.shift === s);
+    currentUpdateRolls = [];
+    if(entry && (isAdmin || entry.enteredBy === currentUser || canViewOthers)) {
+      document.getElementById('upProgramNo').value = entry.program || "";
+      entry.rolls.forEach((r, i) => {
+        if(r.val !== "" && r.val !== null) {
+          let cond = "OK";
+          if(r.strike === "line-through") {
+            cond = (r.color === "#d32f2f") ? "Reject" : "Hold up";
+          }
+          currentUpdateRolls.push({rollId: 'R'+(i+1), weight: r.val, condition: cond});
+        }
+      });
+    }
+    sel.innerHTML = '<option value="">-- Select Roll --</option>';
+    if(currentUpdateRolls.length === 0) {
+      sel.innerHTML = '<option value="">-- No Data --</option>';
+    } else {
+      currentUpdateRolls.forEach(r => {
+        sel.add(new Option(r.rollId + " (" + r.weight + " Kg)", r.rollId));
+      });
+    }
+    hideLoading();
+  }, 200);
+}
+
+function fillUpdateData() {
+  const id = document.getElementById('upRollId').value;
+  if(!id) return;
+  const found = currentUpdateRolls.find(r => r.rollId === id);
+  if(found) {
+    document.getElementById('upWeight').value = found.weight;
+    document.getElementById('upCondition').value = found.condition;
+  }
+}
+
+function submitUpdate() {
+  if(permission === "ViewOnly" && !isAdmin) {
+    showMsg('updateMsg', 'You only have View permission!', true);
+    return;
+  }
+  const rollId = document.getElementById('upRollId').value;
+  if(!rollId) {
+    showMsg('updateMsg', 'Select Roll', true);
+    return;
+  }
+  showLoading();
+  setTimeout(() => {
+    const d = document.getElementById('upDate').value;
+    const m = document.getElementById('upMachineNo').value;
+    const s = document.getElementById('upShift').value;
+    const newWeight = parseFloat(document.getElementById('upWeight').value) || 0;
+    const newCondition = document.getElementById('upCondition').value;
+    const newProgram = document.getElementById('upProgramNo').value.trim();
+
+    let all = getProduction();
+    let entry = all.find(r => r.date === d && r.machine === m && r.shift === s);
+    if(!entry) {
+      showMsg('updateMsg', 'No data found!', true);
+      hideLoading();
+      return;
+    }
+    if(!isAdmin && entry.enteredBy !== currentUser) {
+      showMsg('updateMsg', 'You do not have permission!', true);
+      hideLoading();
+      return;
+    }
+
+    const idx = parseInt(rollId.replace('R','')) - 1;
+    entry.rolls[idx].val = newWeight;
+    entry.rolls[idx].strike = (newCondition === "Hold up" || newCondition === "Reject") ? "line-through" : "none";
+    entry.rolls[idx].color = newCondition === "Reject" ? "#d32f2f" : "#000000";
+
+    if(newProgram) entry.program = newProgram;
+
+    // Recalc total
+    let total = 0;
+    entry.rolls.forEach(r => {
+      if(r.val !== "" && r.color !== "#d32f2f") total += parseFloat(r.val) || 0;
+    });
+    entry.total = Math.round(total * 100) / 100;
+
+    saveProduction(all);
+    showMsg('updateMsg', 'Updated Successfully!', false);
+    fetchUpdateRolls();
+    loadMachineStats();
+    hideLoading();
+  }, 300);
+}
+
+function submitDelete() {
+  const rollId = document.getElementById('upRollId').value;
+  if(!rollId) {
+    showMsg('updateMsg', 'Select Roll first', true);
+    return;
+  }
+  if(!confirm("Delete Roll " + rollId + " ?")) return;
+  showLoading();
+  setTimeout(() => {
+    const d = document.getElementById('upDate').value;
+    const m = document.getElementById('upMachineNo').value;
+    const s = document.getElementById('upShift').value;
+
+    let all = getProduction();
+    let entry = all.find(r => r.date === d && r.machine === m && r.shift === s);
+    if(!entry) {
+      showMsg('updateMsg', 'No data found!', true);
+      hideLoading();
+      return;
+    }
+    if(!isAdmin && entry.enteredBy !== currentUser) {
+      showMsg('updateMsg', 'You do not have permission!', true);
+      hideLoading();
+      return;
+    }
+
+    const idx = parseInt(rollId.replace('R','')) - 1;
+    entry.rolls[idx] = {val:"", bg:"#ffffff", strike:"none", color:"#000000"};
+
+    let total = 0;
+    entry.rolls.forEach(r => {
+      if(r.val !== "" && r.color !== "#d32f2f") total += parseFloat(r.val) || 0;
+    });
+    entry.total = Math.round(total * 100) / 100;
+
+    saveProduction(all);
+    showMsg('updateMsg', 'Roll Deleted!', false);
+    fetchUpdateRolls();
+    loadMachineStats();
+    hideLoading();
+  }, 300);
+}
+
+// ===================== SEARCH & REPORT =====================
+function performSearch() {
+  const d = document.getElementById('searchDate').value;
+  const m = document.getElementById('searchMachine').value;
+  const s = document.getElementById('searchShift').value;
+  if(!d || !m || !s) return;
+  showLoading();
+  setTimeout(() => {
+    const all = getProduction();
+    const entry = all.find(r => r.date === d && r.machine === m && r.shift === s);
+    const tds = document.getElementById('searchResultData').getElementsByTagName('td');
+    if(entry && (canViewOthers || isAdmin || entry.enteredBy === currentUser)) {
+      tds[0].innerText = m;
+      tds[1].innerText = entry.program || "-";
+      for(let i=0; i<10; i++) {
+        const r = entry.rolls[i];
+        tds[i+2].innerText = r.val || "-";
+        tds[i+2].style.backgroundColor = r.bg || "#ffffff";
+        tds[i+2].style.textDecoration = r.strike || "none";
+        tds[i+2].style.color = r.color || "#000000";
+      }
+      tds[12].innerText = entry.total || "0";
+      document.getElementById('searchEnteredBy').innerText = entry.enteredBy || "-";
+      document.getElementById('searchShiftResult').innerText = entry.shift || "-";
+    } else {
+      for(let i=0; i<13; i++) {
+        tds[i].innerText = "N/A";
+        tds[i].style = "";
+      }
+    }
+    hideLoading();
+  }, 200);
+}
+
+function generateReport() {
+  const d = document.getElementById('reportDate').value;
+  const s = document.getElementById('reportShift').value;
+  if(!d) return;
+  const tbody = document.getElementById('reportTableBody');
+  tbody.innerHTML = '<tr><td colspan="15">Loading...</td></tr>';
+  showLoading();
+  setTimeout(() => {
+    const all = getProduction();
+    let rows = all.filter(r => r.date === d);
+    if(s !== "All") rows = rows.filter(r => r.shift === s);
+    if(!canViewOthers && !isAdmin) {
+      rows = rows.filter(r => r.enteredBy === currentUser);
+    }
+    rows.sort((a,b) => parseInt(a.machine) - parseInt(b.machine));
+
+    if(rows.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="15" style="color:#c62828">No data found!</td></tr>';
+      hideLoading();
+      return;
+    }
+
+    let html = '';
+    let grandTotal = 0;
+    rows.forEach(row => {
+      html += `<tr>
+        <td style="font-weight:700">${row.machine}</td>
+        <td>${row.shift}</td>
+        <td>${row.program || "-"}</td>`;
+      for(let j=0; j<10; j++) {
+        const r = row.rolls[j];
+        html += `<td style="background:${r.bg};color:${r.color};text-decoration:${r.strike}">${r.val || "-"}</td>`;
+      }
+      html += `<td style="color:#2e7d32;font-weight:700">${row.total}</td>
+               <td>${row.enteredBy}</td></tr>`;
+      grandTotal += parseFloat(row.total) || 0;
+    });
+    html += `<tr style="background:var(--label)">
+               <td colspan="13" style="text-align:right"><b>Grand Total:</b></td>
+               <td><b>${grandTotal.toFixed(2)}</b></td><td></td></tr>`;
+    tbody.innerHTML = html;
+    hideLoading();
+  }, 300);
+}
+
+// ===================== USER MANAGEMENT =====================
+function loadUsers() {
+  if(!isAdmin) return;
+  const users = getUsers();
+  const tbody = document.getElementById('userTableBody');
+  tbody.innerHTML = '';
+  users.forEach(u => {
+    const cls = u.status === "Active" ? "status-active" : (u.status === "Pending" ? "status-pending" : "status-inactive");
+    let tr = `<tr>
+      <td>${u.username}</td>
+      <td>${u.password}</td>
+      <td class="${cls}">${u.status}</td>
+      <td>${u.canViewOthers}</td>
+      <td>${u.permission}</td>
+      <td>${u.assignedShift}</td>
+      <td>
+        <button onclick="editUser('${u.username}','${u.password}','${u.status}','${u.canViewOthers}','${u.permission}','${u.assignedShift}')" 
+                style="padding:3px 8px;font-size:11px;margin-right:4px;background:#1565c0;color:#fff;border:none;border-radius:3px">Edit</button>`;
+    if(u.username.toLowerCase() !== "admin") {
+      tr += `<button onclick="removeUser('${u.username}')" 
+                style="padding:3px 8px;font-size:11px;background:#c62828;color:#fff;border:none;border-radius:3px">Delete</button>`;
+    }
+    tr += `</td></tr>`;
+    tbody.innerHTML += tr;
+  });
+}
+
+function editUser(u, p, s, v, perm, sh) {
+  document.getElementById('umUsername').value = u;
+  document.getElementById('umPassword').value = p;
+  document.getElementById('umStatus').value = s;
+  document.getElementById('umCanView').value = v;
+  document.getElementById('umPermission').value = perm || "ViewOnly";
+  document.getElementById('umShift').value = sh || "A";
+}
+
+function saveUserData() {
+  const u = document.getElementById('umUsername').value.trim();
+  const p = document.getElementById('umPassword').value.trim();
+  if(!u || !p) {
+    showMsg('umMsg', 'Required', true);
+    return;
+  }
+  let users = getUsers();
+  const idx = users.findIndex(x => x.username === u);
+  if(idx >= 0) {
+    users[idx] = {
+      username: u,
+      password: p,
+      status: document.getElementById('umStatus').value,
+      canViewOthers: document.getElementById('umCanView').value,
+      permission: document.getElementById('umPermission').value,
+      assignedShift: document.getElementById('umShift').value
+    };
+  } else {
+    users.push({
+      username: u,
+      password: p,
+      status: document.getElementById('umStatus').value,
+      canViewOthers: document.getElementById('umCanView').value,
+      permission: document.getElementById('umPermission').value,
+      assignedShift: document.getElementById('umShift').value
+    });
+  }
+  saveUsers(users);
+  showMsg('umMsg', 'User saved successfully!', false);
+  document.getElementById('umUsername').value = '';
+  document.getElementById('umPassword').value = '';
+  loadUsers();
+}
+
+function removeUser(u) {
+  if(!confirm("Delete user " + u + "?")) return;
+  let users = getUsers();
+  users = users.filter(x => x.username !== u);
+  saveUsers(users);
+  showMsg('umMsg', 'User deleted!', false);
+  loadUsers();
+}
+
+// ===================== INIT =====================
+window.onload = function() {
+  const savedUser = localStorage.getItem('ccbd_user');
+  const savedPass = localStorage.getItem('ccbd_pass');
+  if(savedUser && savedPass) {
+    document.getElementById('loginUser').value = savedUser;
+    document.getElementById('loginPass').value = savedPass;
+    document.getElementById('rememberMe').checked = true;
+  }
+  const savedTheme = parseInt(localStorage.getItem('ccbd_theme') || '0');
+  applyTheme(savedTheme);
+  fillMachineSelects();
+};
+
+document.getElementById('loginPass').addEventListener('keypress', function(e) {
+  if(e.key === 'Enter') doLogin();
+});
+</script>
+</body>
+</html>
